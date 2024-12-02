@@ -1,0 +1,51 @@
+name: Debug-Metrics-Pipeline
+
+on: 
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+  publish-metrics:
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+    - name: Calculate and publish metrics
+      env:
+        PROM_URL: https://prometheus-prod-24-prod-eu-west-2.grafana.net/api/prom/push
+        PROM_USER: "1851040"
+      run: |
+        # Get current timestamp in milliseconds
+        TIMESTAMP=$(date +%s000)
+        
+        # Create metrics payload in correct format
+        cat <<EOF > metrics.txt
+        # TYPE github_workflow_duration_seconds gauge
+        github_workflow_duration_seconds{repository="${{ github.repository }}"} $((SECONDS)) $TIMESTAMP
+        # TYPE github_workflow_success gauge
+        github_workflow_success{repository="${{ github.repository }}"} 1 $TIMESTAMP
+        EOF
+        
+        echo "Generated metrics payload:"
+        cat metrics.txt
+        
+        # Send metrics with correct headers
+        curl -v -X POST "${PROM_URL}" \
+          --data-binary @metrics.txt \
+          -u "${PROM_USER}:${{ secrets.GRAFANA_API_KEY }}" \
+          -H "Content-Type: text/plain" \
+          -H "Content-Encoding: none" \
+          -H "X-Prometheus-Remote-Write-Version: 0.1.0"
+
+    - name: Query metrics (for verification)
+      run: |
+        sleep 10s
+        curl -s "https://prometheus-prod-24-prod-eu-west-2.grafana.net/api/prom/api/v1/query" \
+          -u "${PROM_USER}:${{ secrets.GRAFANA_API_KEY }}" \
+          --data-urlencode 'query=github_workflow_duration_seconds'

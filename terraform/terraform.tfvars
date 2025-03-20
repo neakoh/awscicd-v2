@@ -1,2 +1,2 @@
-frontend_image_uri = "851725435775.dkr.ecr.eu-west-2.amazonaws.com/directory/frontend:latest"
-backend_image_uri = "851725435775.dkr.ecr.eu-west-2.amazonaws.com/directory/backend:latest"
+frontend_image_uri = "frontend-image-uri"
+backend_image_uri = "backend-image-uri"

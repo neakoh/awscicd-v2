@@ -6,7 +6,7 @@ variable "frontend_image_uri" {
 variable "domain_name" {
   description = "my domain name"
   type        = string
-  default     = "nikolaimain.com"
+  default     = ""
 }
 
 variable "backend_image_uri" {
